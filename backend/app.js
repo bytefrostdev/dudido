@@ -192,6 +192,7 @@ const registerApiRoutes = (basePath) => {
         `${basePath}/test-notifications`,
         require('./routes/test-notifications')
     );
+    app.use(basePath, require('./routes/chat'));
 };
 
 // Register routes at both /api and /api/v1 (if versioned) to maintain backwards compatibility
