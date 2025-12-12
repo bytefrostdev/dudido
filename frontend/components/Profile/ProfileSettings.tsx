@@ -86,6 +86,7 @@ const ProfileSettings: React.FC<ProfileSettingsProps> = ({
             'telegram',
             'ai',
             'notifications',
+            'integrations',
         ];
         return section && validTabs.includes(section) ? section : 'general';
     }, [location.search]);
@@ -222,7 +223,7 @@ const ProfileSettings: React.FC<ProfileSettingsProps> = ({
     }, [showErrorToast]);
 
     useEffect(() => {
-        if (activeTab === 'apiKeys' && !apiKeysLoaded) {
+        if (activeTab === 'api-keys' && !apiKeysLoaded) {
             loadApiKeys();
         }
     }, [activeTab, apiKeysLoaded, loadApiKeys]);
