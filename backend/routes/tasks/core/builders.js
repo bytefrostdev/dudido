@@ -26,6 +26,8 @@ function buildTaskAttributes(body, userId, timezone, isUpdate = false) {
         priority: parsePriority(body.priority),
         due_date: processDueDateForStorage(dueDate, timezone),
         defer_until: processDeferUntilForStorage(body.defer_until, timezone),
+        scheduled_start: processDeferUntilForStorage(body.scheduled_start, timezone),
+        scheduled_end: processDeferUntilForStorage(body.scheduled_end, timezone),
         status: parseStatus(body.status),
         note: body.note,
         today: body.today !== undefined ? body.today : false,
@@ -138,6 +140,20 @@ function buildUpdateAttributes(body, task, timezone) {
     if (body.defer_until !== undefined) {
         attrs.defer_until = processDeferUntilForStorage(
             body.defer_until,
+            timezone
+        );
+    }
+
+    if (body.scheduled_start !== undefined) {
+        attrs.scheduled_start = processDeferUntilForStorage(
+            body.scheduled_start,
+            timezone
+        );
+    }
+
+    if (body.scheduled_end !== undefined) {
+        attrs.scheduled_end = processDeferUntilForStorage(
+            body.scheduled_end,
             timezone
         );
     }
