@@ -11,6 +11,8 @@ export interface Task {
     priority?: PriorityType | number;
     due_date?: string;
     defer_until?: string;
+    scheduled_start?: string; // ISO 8601 datetime for time block start
+    scheduled_end?: string; // ISO 8601 datetime for time block end
     note?: string;
     today?: boolean;
     today_move_count?: number;
