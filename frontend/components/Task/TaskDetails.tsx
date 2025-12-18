@@ -30,6 +30,7 @@ import {
     TaskRecurrenceCard,
     TaskDueDateCard,
     TaskDeferUntilCard,
+    TaskScheduleCard,
     TaskAttachmentsCard,
 } from './TaskDetails/';
 import { isTaskOverdue, isTaskPastDue } from '../../utils/dateUtils';
@@ -108,6 +109,13 @@ const TaskDetails: React.FC = () => {
     const [editedDeferUntil, setEditedDeferUntil] = useState<string>(
         task?.defer_until || ''
     );
+    const [isEditingSchedule, setIsEditingSchedule] = useState(false);
+    const [editedScheduledStart, setEditedScheduledStart] = useState<string>(
+        task?.scheduled_start || ''
+    );
+    const [editedScheduledEnd, setEditedScheduledEnd] = useState<string>(
+        task?.scheduled_end || ''
+    );
     const [isEditingRecurrence, setIsEditingRecurrence] = useState(false);
     const [recurrenceForm, setRecurrenceForm] = useState({
         recurrence_type: task?.recurrence_type || 'none',
@@ -125,6 +133,11 @@ const TaskDetails: React.FC = () => {
     useEffect(() => {
         setEditedDueDate(task?.due_date || '');
     }, [task?.due_date]);
+
+    useEffect(() => {
+        setEditedScheduledStart(task?.scheduled_start || '');
+        setEditedScheduledEnd(task?.scheduled_end || '');
+    }, [task?.scheduled_start, task?.scheduled_end]);
 
     useEffect(() => {
         setRecurrenceForm({
@@ -468,6 +481,91 @@ const TaskDetails: React.FC = () => {
     const handleCancelDeferUntilEdit = () => {
         setIsEditingDeferUntil(false);
         setEditedDeferUntil(task?.defer_until || '');
+    };
+
+    const handleStartScheduleEdit = () => {
+        setEditedScheduledStart(task?.scheduled_start || '');
+        setEditedScheduledEnd(task?.scheduled_end || '');
+        setIsEditingSchedule(true);
+    };
+
+    const handleSaveSchedule = async () => {
+        if (!task?.uid) {
+            setIsEditingSchedule(false);
+            setEditedScheduledStart(task?.scheduled_start || '');
+            setEditedScheduledEnd(task?.scheduled_end || '');
+            return;
+        }
+
+        // Check if unchanged
+        const startUnchanged =
+            (editedScheduledStart || '') === (task.scheduled_start || '');
+        const endUnchanged =
+            (editedScheduledEnd || '') === (task.scheduled_end || '');
+        if (startUnchanged && endUnchanged) {
+            setIsEditingSchedule(false);
+            return;
+        }
+
+        // Validate: end must be after start if both are set
+        if (editedScheduledStart && editedScheduledEnd) {
+            const startDate = new Date(editedScheduledStart);
+            const endDate = new Date(editedScheduledEnd);
+
+            if (
+                !isNaN(startDate.getTime()) &&
+                !isNaN(endDate.getTime()) &&
+                endDate <= startDate
+            ) {
+                showErrorToast(
+                    t(
+                        'task.scheduleEndBeforeStartError',
+                        'End time must be after start time'
+                    )
+                );
+                return;
+            }
+        }
+
+        try {
+            await updateTask(task.uid, {
+                ...task,
+                scheduled_start: editedScheduledStart || null,
+                scheduled_end: editedScheduledEnd || null,
+            });
+
+            if (uid) {
+                const updatedTask = await fetchTaskByUid(uid);
+                const existingIndex = tasksStore.tasks.findIndex(
+                    (t: Task) => t.uid === uid
+                );
+                if (existingIndex >= 0) {
+                    const updatedTasks = [...tasksStore.tasks];
+                    updatedTasks[existingIndex] = updatedTask;
+                    tasksStore.setTasks(updatedTasks);
+                }
+            }
+
+            showSuccessToast(
+                t('task.scheduleUpdated', 'Scheduled time updated successfully')
+            );
+            setIsEditingSchedule(false);
+            setTimelineRefreshKey((prev) => prev + 1);
+        } catch (error) {
+            console.error('Error updating scheduled time:', error);
+            showErrorToast(
+                t('task.scheduleUpdateError', 'Failed to update scheduled time')
+            );
+            setEditedScheduledStart(task?.scheduled_start || '');
+            setEditedScheduledEnd(task?.scheduled_end || '');
+            setIsEditingSchedule(false);
+        }
+    };
+
+    const handleCancelScheduleEdit = () => {
+        setIsEditingSchedule(false);
+        setEditedScheduledStart(task?.scheduled_start || '');
+        setEditedScheduledEnd(task?.scheduled_end || '');
     };
 
     useEffect(() => {
@@ -1305,6 +1403,18 @@ const TaskDetails: React.FC = () => {
                                     onStartEdit={handleStartDeferUntilEdit}
                                     onSave={handleSaveDeferUntil}
                                     onCancel={handleCancelDeferUntilEdit}
+                                />
+
+                                <TaskScheduleCard
+                                    task={task}
+                                    isEditing={isEditingSchedule}
+                                    editedScheduledStart={editedScheduledStart}
+                                    editedScheduledEnd={editedScheduledEnd}
+                                    onChangeStart={setEditedScheduledStart}
+                                    onChangeEnd={setEditedScheduledEnd}
+                                    onStartEdit={handleStartScheduleEdit}
+                                    onSave={handleSaveSchedule}
+                                    onCancel={handleCancelScheduleEdit}
                                 />
                             </div>
                         </div>
