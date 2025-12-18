@@ -10,6 +10,7 @@ import {
     CalendarIcon,
     XMarkIcon,
     ArrowTopRightOnSquareIcon,
+    ClockIcon,
 } from '@heroicons/react/24/outline';
 import { format, addWeeks, addDays } from 'date-fns';
 import { el, enUS, es, ja, uk, de } from 'date-fns/locale';
@@ -660,6 +661,31 @@ const TaskEventModal: React.FC<TaskEventModalProps> = ({
                             </span>
                         </div>
                     </div>
+
+                    {/* Scheduled Time Block */}
+                    {(task.scheduled_start || task.scheduled_end) && (
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                {t('calendar.scheduledTime', 'Scheduled Time')}
+                            </label>
+                            <div className="flex items-center text-gray-900 dark:text-gray-100">
+                                <ClockIcon className="w-4 h-4 mr-2 text-purple-500" />
+                                {task.scheduled_start && task.scheduled_end ? (
+                                    <span>
+                                        {format(new Date(task.scheduled_start), 'PPP', { locale })}
+                                        {' • '}
+                                        {format(new Date(task.scheduled_start), 'HH:mm')}
+                                        {' – '}
+                                        {format(new Date(task.scheduled_end), 'HH:mm')}
+                                    </span>
+                                ) : task.scheduled_start ? (
+                                    <span>
+                                        {format(new Date(task.scheduled_start), 'PPP HH:mm', { locale })}
+                                    </span>
+                                ) : null}
+                            </div>
+                        </div>
+                    )}
 
                     {/* Due Date */}
                     {task.due_date && (
