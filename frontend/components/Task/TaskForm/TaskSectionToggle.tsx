@@ -8,6 +8,7 @@ import {
     CalendarIcon,
     ClockIcon,
     PaperClipIcon,
+    CalendarDaysIcon,
 } from '@heroicons/react/24/outline';
 import { Task } from '../../../entities/Task';
 import { useTranslation } from 'react-i18next';
@@ -19,6 +20,7 @@ interface TaskSectionToggleProps {
         priority: boolean;
         dueDate: boolean;
         deferUntil: boolean;
+        schedule: boolean;
         recurrence: boolean;
         subtasks: boolean;
         attachments: boolean;
@@ -69,6 +71,12 @@ const TaskSectionToggle: React.FC<TaskSectionToggleProps> = ({
             icon: ClockIcon,
             title: t('forms.task.labels.deferUntil', 'Defer Until'),
             hasValue: !!formData.defer_until,
+        },
+        {
+            key: 'schedule' as const,
+            icon: CalendarDaysIcon,
+            title: t('forms.task.labels.schedule', 'Schedule Time Block'),
+            hasValue: !!formData.scheduled_start || !!formData.scheduled_end,
         },
         {
             key: 'recurrence' as const,
