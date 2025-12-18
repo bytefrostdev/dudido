@@ -281,8 +281,20 @@ const Calendar: React.FC = () => {
     };
 
     const handleEditTask = () => {
-        setIsEventDetailModalOpen(false);
+        // IMPORTANT: Open TaskModal FIRST, then close popup
+        // This prevents race condition where selectedTask gets nullified
+        // before TaskModal can read it
         setIsTaskModalOpen(true);
+        setIsEventDetailModalOpen(false);
+        // Note: Do NOT call setSelectedTask(null) here - TaskModal needs it!
+    };
+
+    const handleCloseEventDetailModal = () => {
+        setIsEventDetailModalOpen(false);
+        // Only clear selectedTask if TaskModal is not opening
+        if (!isTaskModalOpen) {
+            setSelectedTask(null);
+        }
     };
 
     const handleTaskSave = (updatedTask: Task) => {
@@ -568,10 +580,7 @@ const Calendar: React.FC = () => {
                 {selectedTask && (
                     <TaskEventModal
                         isOpen={isEventDetailModalOpen}
-                        onClose={() => {
-                            setIsEventDetailModalOpen(false);
-                            setSelectedTask(null);
-                        }}
+                        onClose={handleCloseEventDetailModal}
                         task={selectedTask}
                         onEditTask={handleEditTask}
                     />
