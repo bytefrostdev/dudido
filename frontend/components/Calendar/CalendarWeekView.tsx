@@ -67,13 +67,16 @@ const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
     const hours = Array.from({ length: 24 }, (_, i) => i);
 
     const getEventsForTimeSlot = (day: Date, hour: number) => {
-        return events.filter((event) => {
-            const eventDay = format(event.start, 'yyyy-MM-dd');
-            const slotDay = format(day, 'yyyy-MM-dd');
-            const eventHour = event.start.getHours();
+        return events
+            .filter((event) => {
+                const eventDay = format(event.start, 'yyyy-MM-dd');
+                const slotDay = format(day, 'yyyy-MM-dd');
+                const eventHour = event.start.getHours();
 
-            return eventDay === slotDay && eventHour === hour;
-        });
+                return eventDay === slotDay && eventHour === hour;
+            })
+            // Sort by start time (minutes) for events in same hour slot (Issue 4 fix)
+            .sort((a, b) => a.start.getTime() - b.start.getTime());
     };
 
     const handleTimeSlotClick = (day: Date, hour: number) => {
@@ -245,6 +248,11 @@ const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
                                                     <div className="text-xs opacity-80 mt-auto">
                                                         {format(
                                                             event.start,
+                                                            'HH:mm'
+                                                        )}
+                                                        {' – '}
+                                                        {format(
+                                                            event.end,
                                                             'HH:mm'
                                                         )}
                                                     </div>
