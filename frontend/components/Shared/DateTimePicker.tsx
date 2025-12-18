@@ -18,6 +18,7 @@ interface DateTimePickerProps {
     placeholder?: string;
     disabled?: boolean;
     className?: string;
+    defaultDate?: string; // ISO string - date to show in calendar when value is empty
 }
 
 const DateTimePicker: React.FC<DateTimePickerProps> = ({
@@ -26,6 +27,7 @@ const DateTimePicker: React.FC<DateTimePickerProps> = ({
     placeholder = 'Select date and time',
     disabled = false,
     className = '',
+    defaultDate,
 }) => {
     const { i18n } = useTranslation();
     const displayLocale = useMemo(
@@ -39,7 +41,25 @@ const DateTimePicker: React.FC<DateTimePickerProps> = ({
         width: 0,
         openUpward: false,
     });
-    const [currentMonth, setCurrentMonth] = useState(new Date());
+
+    // Determine initial month: use value if set, otherwise defaultDate, otherwise today
+    const getInitialMonth = () => {
+        if (value) {
+            const parsed = new Date(value);
+            if (!isNaN(parsed.getTime())) {
+                return new Date(parsed.getFullYear(), parsed.getMonth(), 1);
+            }
+        }
+        if (defaultDate) {
+            const parsed = new Date(defaultDate);
+            if (!isNaN(parsed.getTime())) {
+                return new Date(parsed.getFullYear(), parsed.getMonth(), 1);
+            }
+        }
+        return new Date();
+    };
+
+    const [currentMonth, setCurrentMonth] = useState(getInitialMonth);
     const [selectedDate, setSelectedDate] = useState<Date | null>(null);
     const [selectedTime, setSelectedTime] = useState('12:00');
     const [firstDayOfWeek, setFirstDayOfWeek] = useState(0);
@@ -136,6 +156,16 @@ const DateTimePicker: React.FC<DateTimePickerProps> = ({
             setCurrentMonth(new Date(date.getFullYear(), date.getMonth(), 1));
         }
     }, [value]);
+
+    // Update currentMonth when defaultDate changes (and value is empty)
+    useEffect(() => {
+        if (!value && defaultDate) {
+            const parsed = new Date(defaultDate);
+            if (!isNaN(parsed.getTime())) {
+                setCurrentMonth(new Date(parsed.getFullYear(), parsed.getMonth(), 1));
+            }
+        }
+    }, [defaultDate, value]);
 
     const handleToggle = () => {
         if (disabled) return;
@@ -263,6 +293,14 @@ const DateTimePicker: React.FC<DateTimePickerProps> = ({
         return (
             selectedDate && date.toDateString() === selectedDate.toDateString()
         );
+    };
+
+    // Check if date matches the defaultDate (for visual hint)
+    const isDefaultDate = (date: Date) => {
+        if (!defaultDate) return false;
+        const parsed = new Date(defaultDate);
+        if (isNaN(parsed.getTime())) return false;
+        return date.toDateString() === parsed.toDateString();
     };
 
     useEffect(() => {
@@ -395,7 +433,9 @@ const DateTimePicker: React.FC<DateTimePickerProps> = ({
                                                         ? 'bg-blue-600 text-white'
                                                         : isToday(date)
                                                           ? 'bg-blue-100 dark:bg-blue-900 text-blue-900 dark:text-blue-100'
-                                                          : 'hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-900 dark:text-gray-100'
+                                                          : isDefaultDate(date) && !selectedDate
+                                                            ? 'ring-2 ring-blue-400 ring-inset text-gray-900 dark:text-gray-100'
+                                                            : 'hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-900 dark:text-gray-100'
                                                 }`}
                                             >
                                                 {date.getDate()}
