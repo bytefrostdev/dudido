@@ -80,6 +80,14 @@ async function serializeTask(
             taskJson.defer_until,
             safeTimezone
         ),
+        scheduled_start: processDeferUntilForResponse(
+            taskJson.scheduled_start,
+            safeTimezone
+        ),
+        scheduled_end: processDeferUntilForResponse(
+            taskJson.scheduled_end,
+            safeTimezone
+        ),
         tags: taskJson.Tags || [],
         Project: taskJson.Project
             ? {
@@ -98,6 +106,14 @@ async function serializeTask(
                   ),
                   defer_until: processDeferUntilForResponse(
                       subtask.defer_until,
+                      safeTimezone
+                  ),
+                  scheduled_start: processDeferUntilForResponse(
+                      subtask.scheduled_start,
+                      safeTimezone
+                  ),
+                  scheduled_end: processDeferUntilForResponse(
+                      subtask.scheduled_end,
                       safeTimezone
                   ),
                   completed_at: subtask.completed_at
