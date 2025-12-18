@@ -958,6 +958,7 @@ const TaskModal: React.FC<TaskModalProps> = ({
                                                                     event
                                                                 );
                                                             }}
+                                                            defaultDate={formData.due_date}
                                                         />
                                                     </div>
                                                 )}
