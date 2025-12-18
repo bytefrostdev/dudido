@@ -113,7 +113,26 @@ const Calendar: React.FC = () => {
         }
 
         tasks.forEach((task) => {
-            // Add deferred tasks with defer_until dates
+            // PRIORITY 1: Tasks with scheduled_start/scheduled_end (time blocks)
+            // These take precedence and use actual scheduled times
+            if (task.scheduled_start) {
+                const scheduledStart = new Date(task.scheduled_start);
+                const scheduledEnd = task.scheduled_end
+                    ? new Date(task.scheduled_end)
+                    : new Date(scheduledStart.getTime() + 60 * 60 * 1000); // Default 1 hour if no end
+
+                const taskEvent = {
+                    id: `task-scheduled-${task.id}`,
+                    title: task.name || task.title || `Task ${task.id}`,
+                    start: scheduledStart,
+                    end: scheduledEnd,
+                    type: 'task' as const,
+                    color: task.completed_at ? '#22c55e' : '#8b5cf6', // Green if completed, purple for scheduled
+                };
+                taskEvents.push(taskEvent);
+            }
+
+            // PRIORITY 2: Deferred tasks (defer_until)
             if (task.defer_until) {
                 const deferDate = new Date(task.defer_until);
                 const taskEvent = {
@@ -127,8 +146,8 @@ const Calendar: React.FC = () => {
                 taskEvents.push(taskEvent);
             }
 
-            // Add tasks with due dates
-            if (task.due_date) {
+            // PRIORITY 3: Tasks with due dates (but NO scheduled_start to avoid duplicates)
+            if (task.due_date && !task.scheduled_start) {
                 const dueDate = new Date(task.due_date);
                 const taskEvent = {
                     id: `task-${task.id}`,
@@ -141,8 +160,8 @@ const Calendar: React.FC = () => {
                 taskEvents.push(taskEvent);
             }
 
-            // Add tasks scheduled for today (if they don't have defer_until or due_date)
-            if (!task.defer_until && !task.due_date && task.created_at) {
+            // PRIORITY 4: Tasks created today (if they don't have defer_until, due_date, or scheduled_start)
+            if (!task.defer_until && !task.due_date && !task.scheduled_start && task.created_at) {
                 const createdDate = new Date(task.created_at);
                 const today = new Date();
 
@@ -160,8 +179,8 @@ const Calendar: React.FC = () => {
                 }
             }
 
-            // Always add tasks to calendar for easier debugging (only if no defer_until, due_date, or created_at)
-            if (!task.defer_until && !task.due_date && !task.created_at) {
+            // PRIORITY 5: Fallback for tasks without any date
+            if (!task.defer_until && !task.due_date && !task.scheduled_start && !task.created_at) {
                 const taskEvent = {
                     id: `task-fallback-${task.id}`,
                     title: `📌 ${task.name || task.title || `Task ${task.id}`}`,
@@ -225,9 +244,9 @@ const Calendar: React.FC = () => {
     const handleEventClick = (event: CalendarEvent) => {
         // Handle task events
         if (event.type === 'task') {
-            // Extract task ID from event ID (handles task-, task-defer-, task-created-, task-fallback-)
+            // Extract task ID from event ID (handles task-, task-defer-, task-created-, task-fallback-, task-scheduled-)
             const taskId = event.id.replace(
-                /^task(-defer|-created|-fallback)?-/,
+                /^task(-defer|-created|-fallback|-scheduled)?-/,
                 ''
             );
             const task = allTasks.find((t) => t.id.toString() === taskId);
@@ -243,6 +262,8 @@ const Calendar: React.FC = () => {
                     tags: task.tags || [],
                     note: task.note || task.description || '',
                     due_date: task.due_date,
+                    scheduled_start: task.scheduled_start,
+                    scheduled_end: task.scheduled_end,
                     created_at: task.created_at,
                     completed_at: task.completed_at,
                     project_id: task.project_id,
@@ -321,7 +342,7 @@ const Calendar: React.FC = () => {
 
         // Extract task ID from event ID
         const taskId = eventId.replace(
-            /^task(-defer|-created|-fallback)?-/,
+            /^task(-defer|-created|-fallback|-scheduled)?-/,
             ''
         );
         const task = allTasks.find((t) => t.id.toString() === taskId);
@@ -344,7 +365,15 @@ const Calendar: React.FC = () => {
             newDateTime.setHours(newHour, 0, 0, 0);
         } else {
             // If no hour specified (month view), keep the original time or set to start of day
-            if (task.due_date) {
+            if (task.scheduled_start) {
+                const originalTime = new Date(task.scheduled_start);
+                newDateTime.setHours(
+                    originalTime.getHours(),
+                    originalTime.getMinutes(),
+                    0,
+                    0
+                );
+            } else if (task.due_date) {
                 const originalTime = new Date(task.due_date);
                 newDateTime.setHours(
                     originalTime.getHours(),
@@ -358,19 +387,41 @@ const Calendar: React.FC = () => {
         }
 
         // Determine which field to update based on event type
+        const isScheduledEvent = eventId.startsWith('task-scheduled-');
         const isDeferEvent = eventId.startsWith('task-defer-');
-        const fieldToUpdate = isDeferEvent ? 'defer_until' : 'due_date';
+        
+        let fieldToUpdate: string;
+        let updateData: Record<string, string>;
+        
+        if (isScheduledEvent) {
+            // For scheduled events, update scheduled_start and adjust scheduled_end
+            fieldToUpdate = 'scheduled_start';
+            const duration = task.scheduled_end && task.scheduled_start
+                ? new Date(task.scheduled_end).getTime() - new Date(task.scheduled_start).getTime()
+                : 60 * 60 * 1000; // Default 1 hour
+            const newEndDateTime = new Date(newDateTime.getTime() + duration);
+            updateData = {
+                scheduled_start: newDateTime.toISOString(),
+                scheduled_end: newEndDateTime.toISOString(),
+            };
+        } else if (isDeferEvent) {
+            fieldToUpdate = 'defer_until';
+            updateData = { defer_until: newDateTime.toISOString() };
+        } else {
+            fieldToUpdate = 'due_date';
+            updateData = { due_date: newDateTime.toISOString() };
+        }
 
         console.log('Updating task:', {
             uid: task.uid,
             field: fieldToUpdate,
-            newDateTime: newDateTime.toISOString(),
+            updateData,
         });
 
         // Optimistically update the UI first
         const updatedTask = {
             ...task,
-            [fieldToUpdate]: newDateTime.toISOString(),
+            ...updateData,
         };
 
         // Update local tasks state
@@ -382,10 +433,11 @@ const Calendar: React.FC = () => {
         setEvents((prevEvents) =>
             prevEvents.map((event) => {
                 if (event.id === eventId) {
+                    const duration = event.end.getTime() - event.start.getTime();
                     return {
                         ...event,
                         start: newDateTime,
-                        end: new Date(newDateTime.getTime() + 60 * 60 * 1000),
+                        end: new Date(newDateTime.getTime() + duration),
                     };
                 }
                 return event;
@@ -394,9 +446,7 @@ const Calendar: React.FC = () => {
 
         // Update in background
         try {
-            await updateTask(task.uid, {
-                [fieldToUpdate]: newDateTime.toISOString(),
-            });
+            await updateTask(task.uid, updateData);
             console.log('Task updated successfully');
         } catch (error) {
             console.error('Error updating task:', error);
