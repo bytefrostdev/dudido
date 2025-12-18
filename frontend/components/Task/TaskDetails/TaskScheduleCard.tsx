@@ -94,6 +94,16 @@ const TaskScheduleCard: React.FC<TaskScheduleCardProps> = ({
 
     const hasSchedule = task.scheduled_start;
 
+    // Issue 6a: Use due_date if available, otherwise fallback to today's date
+    // This allows scheduling time blocks even for tasks without a due date
+    const getDefaultDate = (): string => {
+        if (task.due_date) {
+            return task.due_date;
+        }
+        // Fallback to today
+        return new Date().toISOString();
+    };
+
     return (
         <div>
             <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
@@ -107,7 +117,7 @@ const TaskScheduleCard: React.FC<TaskScheduleCardProps> = ({
                             scheduledEnd={editedScheduledEnd}
                             onStartChange={onChangeStart}
                             onEndChange={onChangeEnd}
-                            defaultDate={task.due_date}
+                            defaultDate={getDefaultDate()}
                         />
                         <div className="flex justify-end space-x-2">
                             <button
