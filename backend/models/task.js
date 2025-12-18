@@ -38,6 +38,14 @@ module.exports = (sequelize) => {
                 type: DataTypes.DATE,
                 allowNull: true,
             },
+            scheduled_start: {
+                type: DataTypes.DATE,
+                allowNull: true,
+            },
+            scheduled_end: {
+                type: DataTypes.DATE,
+                allowNull: true,
+            },
             today: {
                 type: DataTypes.BOOLEAN,
                 allowNull: false,
