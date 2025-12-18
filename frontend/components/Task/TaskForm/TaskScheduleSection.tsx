@@ -7,6 +7,7 @@ interface TaskScheduleSectionProps {
     scheduledEnd: string;
     onStartChange: (value: string) => void;
     onEndChange: (value: string) => void;
+    defaultDate?: string; // Task's due_date - used as initial calendar view
 }
 
 const TaskScheduleSection: React.FC<TaskScheduleSectionProps> = ({
@@ -14,6 +15,7 @@ const TaskScheduleSection: React.FC<TaskScheduleSectionProps> = ({
     scheduledEnd,
     onStartChange,
     onEndChange,
+    defaultDate,
 }) => {
     const { t } = useTranslation();
 
@@ -31,6 +33,7 @@ const TaskScheduleSection: React.FC<TaskScheduleSectionProps> = ({
                         'forms.task.scheduledStartPlaceholder',
                         'Select start time'
                     )}
+                    defaultDate={defaultDate}
                 />
             </div>
 
@@ -46,6 +49,7 @@ const TaskScheduleSection: React.FC<TaskScheduleSectionProps> = ({
                         'forms.task.scheduledEndPlaceholder',
                         'Select end time'
                     )}
+                    defaultDate={scheduledStart || defaultDate}
                 />
             </div>
 
