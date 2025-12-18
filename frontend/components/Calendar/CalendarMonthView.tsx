@@ -151,11 +151,14 @@ const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
             {/* Calendar grid */}
             <div className="grid grid-cols-7 flex-1 min-h-0 auto-rows-fr divide-x divide-gray-200 dark:divide-gray-700">
                 {days.map((day) => {
-                    const dayEvents = events.filter(
-                        (event) =>
-                            format(event.start, 'yyyy-MM-dd') ===
-                            format(day, 'yyyy-MM-dd')
-                    );
+                    // Filter events for this day and sort by start time (Issue 4 fix)
+                    const dayEvents = events
+                        .filter(
+                            (event) =>
+                                format(event.start, 'yyyy-MM-dd') ===
+                                format(day, 'yyyy-MM-dd')
+                        )
+                        .sort((a, b) => a.start.getTime() - b.start.getTime());
 
                     const isCurrentMonth = isSameMonth(day, currentDate);
                     const isTodayDate = isToday(day);
@@ -214,9 +217,13 @@ const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
                                             boxShadow:
                                                 '0 1px 3px rgba(0,0,0,0.1)',
                                         }}
-                                        title={event.title}
+                                        title={`${format(event.start, 'HH:mm')} - ${format(event.end, 'HH:mm')}: ${event.title}`}
                                     >
                                         <span className="truncate">
+                                            <span className="opacity-80 font-normal">
+                                                {format(event.start, 'HH:mm')}
+                                            </span>
+                                            {' '}
                                             {event.title}
                                         </span>
                                     </div>
