@@ -31,13 +31,16 @@ const CalendarDayView: React.FC<CalendarDayViewProps> = ({
     );
 
     const getEventsForTimeSlot = (hour: number) => {
-        return events.filter((event) => {
-            const eventDay = format(event.start, 'yyyy-MM-dd');
-            const currentDay = format(currentDate, 'yyyy-MM-dd');
-            const eventHour = event.start.getHours();
+        return events
+            .filter((event) => {
+                const eventDay = format(event.start, 'yyyy-MM-dd');
+                const currentDay = format(currentDate, 'yyyy-MM-dd');
+                const eventHour = event.start.getHours();
 
-            return eventDay === currentDay && eventHour === hour;
-        });
+                return eventDay === currentDay && eventHour === hour;
+            })
+            // Sort by start time (minutes) for events in same hour slot (Issue 4 fix)
+            .sort((a, b) => a.start.getTime() - b.start.getTime());
     };
 
     const handleTimeSlotClick = (hour: number) => {
@@ -146,6 +149,8 @@ const CalendarDayView: React.FC<CalendarDayViewProps> = ({
                                 duration >= 24 * 60 * 60 * 1000
                             );
                         })
+                        // Sort all-day events by start time too
+                        .sort((a, b) => a.start.getTime() - b.start.getTime())
                         .map((event) => (
                             <div
                                 key={event.id}
@@ -251,7 +256,7 @@ const CalendarDayView: React.FC<CalendarDayViewProps> = ({
                                                         event.start,
                                                         'HH:mm'
                                                     )}{' '}
-                                                    -{' '}
+                                                    –{' '}
                                                     {format(event.end, 'HH:mm')}
                                                 </div>
                                             </div>
