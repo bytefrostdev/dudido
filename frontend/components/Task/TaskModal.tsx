@@ -932,7 +932,7 @@ const TaskModal: React.FC<TaskModalProps> = ({
                                                                 formData.scheduled_end ||
                                                                 ''
                                                             }
-                                                            onScheduledStartChange={(
+                                                            onStartChange={(
                                                                 value
                                                             ) => {
                                                                 const event = {
@@ -945,7 +945,7 @@ const TaskModal: React.FC<TaskModalProps> = ({
                                                                     event
                                                                 );
                                                             }}
-                                                            onScheduledEndChange={(
+                                                            onEndChange={(
                                                                 value
                                                             ) => {
                                                                 const event = {
