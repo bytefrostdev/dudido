@@ -144,6 +144,9 @@ function buildRRule(task) {
 
 /**
  * Generate a single VEVENT component for a task
+ *
+ * If task has scheduled_start and scheduled_end, creates a timed event.
+ * Otherwise, falls back to all-day event based on due_date.
  */
 function generateVEvent(task, hostname) {
     const lines = [];
@@ -153,11 +156,17 @@ function generateVEvent(task, hostname) {
     // UID must be globally unique and persistent
     lines.push(`UID:task-${task.id}@${hostname}`);
 
-    // Use due_date as the event date (all-day event)
-    // Tasks typically don't have specific times, so we use VALUE=DATE
-    const dueDate = formatICalDate(task.due_date);
-    lines.push(`DTSTART;VALUE=DATE:${dueDate}`);
-    lines.push(`DTEND;VALUE=DATE:${dueDate}`);
+    // Check if task has scheduled time block
+    if (task.scheduled_start && task.scheduled_end) {
+        // Timed event: specific start and end times
+        lines.push(`DTSTART:${formatICalDateTime(task.scheduled_start)}`);
+        lines.push(`DTEND:${formatICalDateTime(task.scheduled_end)}`);
+    } else {
+        // All-day event: use due_date
+        const dueDate = formatICalDate(task.due_date);
+        lines.push(`DTSTART;VALUE=DATE:${dueDate}`);
+        lines.push(`DTEND;VALUE=DATE:${dueDate}`);
+    }
 
     // Created and modified timestamps
     if (task.created_at) {
