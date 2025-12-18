@@ -167,6 +167,16 @@ const DateTimePicker: React.FC<DateTimePickerProps> = ({
         }
     }, [defaultDate, value]);
 
+    // Issue 6b: Auto-select defaultDate when picker opens (if no date is selected)
+    useEffect(() => {
+        if (isOpen && !selectedDate && defaultDate) {
+            const parsed = new Date(defaultDate);
+            if (!isNaN(parsed.getTime())) {
+                setSelectedDate(parsed);
+            }
+        }
+    }, [isOpen, defaultDate]); // Only trigger when picker opens or defaultDate changes
+
     const handleToggle = () => {
         if (disabled) return;
 
