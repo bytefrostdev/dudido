@@ -25,6 +25,7 @@ import TaskSubtasksSection from './TaskForm/TaskSubtasksSection';
 import TaskPrioritySection from './TaskForm/TaskPrioritySection';
 import TaskDueDateSection from './TaskForm/TaskDueDateSection';
 import TaskDeferUntilSection from './TaskForm/TaskDeferUntilSection';
+import TaskScheduleSection from './TaskForm/TaskScheduleSection';
 import TaskAttachmentsSection from './TaskForm/TaskAttachmentsSection';
 import TaskSectionToggle from './TaskForm/TaskSectionToggle';
 import TaskModalActions from './TaskForm/TaskModalActions';
@@ -89,6 +90,7 @@ const TaskModal: React.FC<TaskModalProps> = ({
         priority: false,
         dueDate: false,
         deferUntil: false,
+        schedule: false,
         recurrence: false,
         subtasks: false,
         attachments: false,
@@ -170,6 +172,7 @@ const TaskModal: React.FC<TaskModalProps> = ({
                 priority: false,
                 dueDate: false,
                 deferUntil: false,
+                schedule: false,
                 recurrence: task.recurring_parent_uid ? true : false,
                 subtasks: false,
                 attachments: false,
@@ -316,6 +319,28 @@ const TaskModal: React.FC<TaskModalProps> = ({
             }
         }
 
+        // Validate scheduled_start vs scheduled_end
+        if (name === 'scheduled_start' || name === 'scheduled_end') {
+            const newFormData = { ...formData, [name]: value };
+
+            if (newFormData.scheduled_start && newFormData.scheduled_end) {
+                const startDate = new Date(newFormData.scheduled_start);
+                const endDate = new Date(newFormData.scheduled_end);
+
+                if (!isNaN(startDate.getTime()) && !isNaN(endDate.getTime())) {
+                    if (endDate <= startDate) {
+                        showErrorToast(
+                            t(
+                                'task.scheduleEndBeforeStartError',
+                                'End time must be after start time'
+                            )
+                        );
+                        return;
+                    }
+                }
+            }
+        }
+
         setFormData((prev) => ({ ...prev, [name]: value }));
 
         // Analyze task name in real-time (only if intelligence is enabled)
@@ -417,6 +442,25 @@ const TaskModal: React.FC<TaskModalProps> = ({
                 }
             }
 
+            // Final validation for scheduled times before submit
+            if (formData.scheduled_start && formData.scheduled_end) {
+                const startDate = new Date(formData.scheduled_start);
+                const endDate = new Date(formData.scheduled_end);
+
+                if (!isNaN(startDate.getTime()) && !isNaN(endDate.getTime())) {
+                    if (endDate <= startDate) {
+                        showErrorToast(
+                            t(
+                                'task.scheduleEndBeforeStartError',
+                                'End time must be after start time'
+                            )
+                        );
+                        setIsSaving(false);
+                        return;
+                    }
+                }
+            }
+
             // Add new tags to the global store
             const existingTagNames = availableTags.map((tag: any) => tag.name);
             const newTagNames = tags.filter(
@@ -508,7 +552,9 @@ const TaskModal: React.FC<TaskModalProps> = ({
             formData.recurrence_type !== task.recurrence_type ||
             formData.recurrence_interval !== task.recurrence_interval ||
             formData.recurrence_weekday !== task.recurrence_weekday ||
-            formData.recurrence_end_date !== task.recurrence_end_date;
+            formData.recurrence_end_date !== task.recurrence_end_date ||
+            formData.scheduled_start !== task.scheduled_start ||
+            formData.scheduled_end !== task.scheduled_end;
 
         // Compare tags
         const originalTags = task.tags?.map((tag) => tag.name) || [];
@@ -861,6 +907,57 @@ const TaskModal: React.FC<TaskModalProps> = ({
                                                                 'forms.task.deferUntilPlaceholder',
                                                                 'Select defer until date and time'
                                                             )}
+                                                        />
+                                                    </div>
+                                                )}
+
+                                                {expandedSections.schedule && (
+                                                    <div
+                                                        data-testid="schedule-section"
+                                                        data-state="expanded"
+                                                        className="border-b border-gray-200 dark:border-gray-700 pb-4 mb-4 px-4 overflow-visible"
+                                                    >
+                                                        <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                                                            {t(
+                                                                'forms.task.labels.schedule',
+                                                                'Schedule'
+                                                            )}
+                                                        </h3>
+                                                        <TaskScheduleSection
+                                                            scheduledStart={
+                                                                formData.scheduled_start ||
+                                                                ''
+                                                            }
+                                                            scheduledEnd={
+                                                                formData.scheduled_end ||
+                                                                ''
+                                                            }
+                                                            onScheduledStartChange={(
+                                                                value
+                                                            ) => {
+                                                                const event = {
+                                                                    target: {
+                                                                        name: 'scheduled_start',
+                                                                        value,
+                                                                    },
+                                                                } as React.ChangeEvent<HTMLInputElement>;
+                                                                handleChange(
+                                                                    event
+                                                                );
+                                                            }}
+                                                            onScheduledEndChange={(
+                                                                value
+                                                            ) => {
+                                                                const event = {
+                                                                    target: {
+                                                                        name: 'scheduled_end',
+                                                                        value,
+                                                                    },
+                                                                } as React.ChangeEvent<HTMLInputElement>;
+                                                                handleChange(
+                                                                    event
+                                                                );
+                                                            }}
                                                         />
                                                     </div>
                                                 )}
