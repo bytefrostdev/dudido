@@ -16,7 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [0.1.0] - 2025-12-19
 
-First dudido release, based on tududi v0.88.2.
+First dudido release, based on tududi v0.88.1.
 
 ### Added
 
@@ -56,4 +56,4 @@ npx sequelize-cli db:migrate
 
 ## Base Version
 
-dudido is forked from [tududi v0.88.2](https://github.com/chrisvel/tududi/releases/tag/v0.88.2).
+dudido is forked from [tududi v0.88.1](https://github.com/chrisvel/tududi/releases/tag/v0.88.1).
