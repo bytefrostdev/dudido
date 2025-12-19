@@ -69,9 +69,30 @@ else
 fi
 
 echo "Setting ownership of application directories to $TARGET_USER:$TARGET_GROUP"
-mkdir -p /app/backend/db /app/backend/certs /app/backend/uploads
+
+# For Railway: /data is mounted volume, /app/backend/db and /app/backend/uploads are symlinks
+# For Docker Compose: directories exist directly
+if [ -d "/data" ]; then
+    # Railway setup: ensure /data subdirectories exist
+    mkdir -p /data/db /data/uploads
+    chown -R "$TARGET_USER":"$TARGET_GROUP" /data
+    chmod 770 /data/db /data/uploads
+    echo "Railway volume setup: /data/db and /data/uploads configured"
+else
+    # Standard Docker setup: create directories directly
+    mkdir -p /app/backend/db /app/backend/uploads
+    chown -R "$TARGET_USER":"$TARGET_GROUP" /app/backend/db /app/backend/uploads
+    chmod 770 /app/backend/db /app/backend/uploads
+fi
+
+# Certs directory (not persisted)
+mkdir -p /app/backend/certs
+chown -R "$TARGET_USER":"$TARGET_GROUP" /app/backend/certs
+chmod 770 /app/backend/certs
+
+# Set ownership of app directories
 chown -R "$TARGET_USER":"$TARGET_GROUP" /app/backend /app/scripts
-chmod 770 /app/backend/db /app/backend/certs /app/backend/uploads
+
 set_db_file_permissions
 
 # Drop privileges and execute the original start script
