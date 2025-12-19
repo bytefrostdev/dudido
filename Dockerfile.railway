@@ -104,11 +104,20 @@ COPY --from=builder --chown=app:app /app/public/favicon* ./backend/dist/
 COPY --from=builder --chown=app:app /app/public/manifest.json ./backend/dist/
 COPY --from=builder --chown=app:app /app/public/locales ./backend/dist/locales
 
-# Create necessary directories
-RUN mkdir -p /app/backend/db /app/backend/certs /app/backend/uploads && \
-    chown -R app:app /app/backend/db /app/backend/certs /app/backend/uploads
+# Railway volume setup: Single /data mount covers both db and uploads
+# This avoids mounting /app/backend which would overwrite application files
+RUN mkdir -p /data/db /data/uploads && \
+    chown -R app:app /data && \
+    # Remove placeholder directories and create symlinks
+    rm -rf /app/backend/db /app/backend/uploads && \
+    ln -s /data/db /app/backend/db && \
+    ln -s /data/uploads /app/backend/uploads && \
+    # Create certs directory (not persisted - regenerated on start)
+    mkdir -p /app/backend/certs && \
+    chown -R app:app /app/backend/certs
 
 # NOTE: No VOLUME instructions - Railway manages volumes via platform
+# Mount point: /data (covers db + uploads via symlinks)
 # See: https://docs.railway.com/reference/volumes
 
 EXPOSE 3002
